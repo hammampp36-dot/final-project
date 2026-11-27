@@ -5,8 +5,10 @@ namespace App\Livewire;
 use App\Models\Crop;
 use App\Models\Land;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
 class FarmCalculator extends Component
 {
     /**
@@ -24,9 +26,12 @@ class FarmCalculator extends Component
      */
     public function mount(?int $cropId = null, float $area = 1000): void
     {
+        $requestedCropId = request()->query('crop_id') ? (int) request()->query('crop_id') : $cropId;
+        $requestedArea = request()->query('area') ? (float) request()->query('area') : $area;
+
         $firstCrop = Crop::orderBy('name')->first();
-        $this->selectedCropId = $cropId ?: $firstCrop?->id;
-        $this->areaM2 = $area > 0 ? $area : 1000;
+        $this->selectedCropId = $requestedCropId ?: $firstCrop?->id;
+        $this->areaM2 = $requestedArea > 0 ? $requestedArea : 1000;
     }
 
     /**
@@ -37,8 +42,7 @@ class FarmCalculator extends Component
         $land = Land::where('user_id', Auth::id())->find($landId);
 
         if ($land) {
-            // Ekstrak angka dari string area_size (misal: "1.500 m2" -> 1500)
-            $clean = preg_replace('/[^\d]/', '', $land->area_size);
+            $clean = preg_replace('/[^\d]/', '', (string) $land->area_size);
             $parsed = (float) $clean;
 
             if ($parsed > 0) {
@@ -60,103 +64,52 @@ class FarmCalculator extends Component
             return null;
         }
 
-        $ratio = $this->areaM2 / 10000; // Proporsi per hektar
+        $multiplier = $this->areaM2 / 1000.0;
 
-        return match ($selectedCrop->name) {
-            'Cabai Merah' => [
-                'crop' => 'Cabai Merah',
-                'population' => (int) round(17000 * $ratio),
-                'seed_amount' => round(150 * $ratio, 1).' gram benih ('.ceil(150 * $ratio / 10).' sachet)',
-                'manure' => round(15 * $ratio, 1).' Ton Pupuk Kompos / Kandang',
-                'npk' => round(500 * $ratio, 1).' kg NPK 16-16-16',
-                'urea' => round(150 * $ratio, 1).' kg Urea',
-                'kcl_sp36' => round(150 * $ratio, 1).' kg SP-36 & 100 kg KCl',
-                'estimated_yield' => round(13000 * $ratio, 0).' kg (13 Ton/Ha)',
-                'price_per_kg' => 35000,
-                'estimated_revenue' => (float) (13000 * $ratio * 35000),
-                'spacing' => '60 x 50 cm (Bedengan mulsa plastik)',
-            ],
-            'Tomat' => [
-                'crop' => 'Tomat',
-                'population' => (int) round(18000 * $ratio),
-                'seed_amount' => round(120 * $ratio, 1).' gram benih berkualitas',
-                'manure' => round(20 * $ratio, 1).' Ton Pupuk Kandang Matang',
-                'npk' => round(600 * $ratio, 1).' kg NPK Mutiara',
-                'urea' => round(100 * $ratio, 1).' kg Urea',
-                'kcl_sp36' => round(200 * $ratio, 1).' kg SP-36',
-                'estimated_yield' => round(40000 * $ratio, 0).' kg (40 Ton/Ha)',
-                'price_per_kg' => 10000,
-                'estimated_revenue' => (float) (40000 * $ratio * 10000),
-                'spacing' => '60 x 60 cm (Wajib ajir bambu)',
-            ],
-            'Jagung Manis' => [
-                'crop' => 'Jagung Manis',
-                'population' => (int) round(53000 * $ratio),
-                'seed_amount' => round(12 * $ratio, 1).' kg benih hibrida',
-                'manure' => round(5 * $ratio, 1).' Ton Pupuk Kandang',
-                'npk' => round(300 * $ratio, 1).' kg NPK Phonska',
-                'urea' => round(250 * $ratio, 1).' kg Urea',
-                'kcl_sp36' => round(100 * $ratio, 1).' kg SP-36',
-                'estimated_yield' => round(12000 * $ratio, 0).' kg tongkol jagung segar',
-                'price_per_kg' => 7000,
-                'estimated_revenue' => (float) (12000 * $ratio * 7000),
-                'spacing' => '75 x 25 cm (1 biji per lubang)',
-            ],
-            'Padi Sawah' => [
-                'crop' => 'Padi Sawah',
-                'population' => (int) round(160000 * $ratio).' rumpun (Jajar Legowo)',
-                'seed_amount' => round(25 * $ratio, 1).' kg benih padi bersertifikat',
-                'manure' => round(2 * $ratio, 1).' Ton Kompos Jerami / Organik',
-                'npk' => round(300 * $ratio, 1).' kg NPK 15-15-15',
-                'urea' => round(200 * $ratio, 1).' kg Urea',
-                'kcl_sp36' => round(100 * $ratio, 1).' kg SP-36',
-                'estimated_yield' => round(6500 * $ratio, 0).' kg Gabah Kering Panen (GKP)',
-                'price_per_kg' => 7500,
-                'estimated_revenue' => (float) (6500 * $ratio * 7500),
-                'spacing' => 'Jajar Legowo 2:1 (20 x 10 x 40 cm)',
-            ],
-            'Bawang Merah' => [
-                'crop' => 'Bawang Merah',
-                'population' => (int) round(250000 * $ratio).' titik tanam umbi',
-                'seed_amount' => round(1000 * $ratio, 0).' kg umbi bibit siap tanam',
-                'manure' => round(10 * $ratio, 1).' Ton Pupuk Kandang Halus',
-                'npk' => round(400 * $ratio, 1).' kg NPK',
-                'urea' => round(150 * $ratio, 1).' kg Urea / ZA',
-                'kcl_sp36' => round(150 * $ratio, 1).' kg SP-36',
-                'estimated_yield' => round(11000 * $ratio, 0).' kg umbi basah panen',
-                'price_per_kg' => 28000,
-                'estimated_revenue' => (float) (11000 * $ratio * 28000),
-                'spacing' => '15 x 15 cm atau 20 x 15 cm',
-            ],
-            default => [
-                'crop' => $selectedCrop->name,
-                'population' => (int) round(20000 * $ratio),
-                'seed_amount' => round(2 * $ratio, 1).' kg benih',
-                'manure' => round(10 * $ratio, 1).' Ton Kompos',
-                'npk' => round(300 * $ratio, 1).' kg NPK',
-                'urea' => round(150 * $ratio, 1).' kg Urea',
-                'kcl_sp36' => round(100 * $ratio, 1).' kg Pupuk Pelengkap',
-                'estimated_yield' => round(15000 * $ratio, 0).' kg hasil panen',
-                'price_per_kg' => 12000,
-                'estimated_revenue' => (float) (15000 * $ratio * 12000),
-                'spacing' => 'Disesuaikan dengan bedengan',
-            ],
+        $seedAmount = match ($selectedCrop->name) {
+            'Cabai Merah' => number_format((int) round(1700 * $multiplier), 0, ',', '.').' Batang',
+            'Tomat Mawar' => number_format((int) round(2000 * $multiplier), 0, ',', '.').' Batang',
+            'Jagung Manis' => number_format(round(7 * $multiplier, 1), 1, ',', '.').' Kg',
+            'Padi Sawah' => number_format(round(25 * $multiplier, 1), 1, ',', '.').' Kg',
+            'Bawang Merah' => number_format(round(100 * $multiplier, 1), 1, ',', '.').' Kg Umbi',
+            'Mentimun' => number_format(round(1 * $multiplier, 1), 1, ',', '.').' Kg',
+            default => number_format((int) round(1500 * $multiplier), 0, ',', '.').' Bibit / Benih',
         };
+
+        $fertilizerUrea = round(20 * $multiplier, 1);
+        $fertilizerNpk = round(30 * $multiplier, 1);
+        $fertilizerOrganik = round(150 * $multiplier, 1);
+
+        $harvestYield = match ($selectedCrop->name) {
+            'Cabai Merah' => number_format((int) round(1200 * $multiplier), 0, ',', '.').' Kg Cabai Segar',
+            'Tomat Mawar' => number_format((int) round(2500 * $multiplier), 0, ',', '.').' Kg Buah',
+            'Jagung Manis' => number_format((int) round(1800 * $multiplier), 0, ',', '.').' Kg Tongkol',
+            'Padi Sawah' => number_format((int) round(650 * $multiplier), 0, ',', '.').' Kg Gabah Kering',
+            'Bawang Merah' => number_format((int) round(1000 * $multiplier), 0, ',', '.').' Kg Bawang Segar',
+            'Mentimun' => number_format((int) round(2000 * $multiplier), 0, ',', '.').' Kg',
+            default => number_format((int) round(1000 * $multiplier), 0, ',', '.').' Kg Hasil Panen',
+        };
+
+        return [
+            'crop' => $selectedCrop,
+            'area' => $this->areaM2,
+            'seeds' => $seedAmount,
+            'urea_kg' => $fertilizerUrea,
+            'npk_kg' => $fertilizerNpk,
+            'organik_kg' => $fertilizerOrganik,
+            'harvest_yield' => $harvestYield,
+            'harvest_days' => $selectedCrop->estimated_harvest_days,
+        ];
     }
 
-    /**
-     * Render the Livewire component view.
-     */
     public function render()
     {
         $crops = Crop::orderBy('name')->get();
-        $lands = Auth::check() ? Auth::user()->lands()->orderBy('name')->get() : collect();
-        $selectedCrop = Crop::find($this->selectedCropId);
+        $userLands = Auth::check() ? Land::where('user_id', Auth::id())->get() : collect();
 
         return view('livewire.farm-calculator', [
             'crops' => $crops,
-            'lands' => $lands,
-            'selectedCrop' => $selectedCrop,
+            'userLands' => $userLands,
             'calculation' => $this->calculation,
         ]);
     }

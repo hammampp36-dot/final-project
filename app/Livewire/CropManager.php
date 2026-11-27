@@ -5,8 +5,10 @@ namespace App\Livewire;
 use App\Models\Crop;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
 class CropManager extends Component
 {
     public string $search = '';
@@ -32,7 +34,7 @@ class CropManager extends Component
 
     public function mount(bool $isAdmin = false): void
     {
-        $this->isAdmin = $isAdmin || (Auth::check() && Auth::user()->isAdmin());
+        $this->isAdmin = $isAdmin || (request()->routeIs('admin.*') || (Auth::check() && Auth::user()->isAdmin() && request()->is('admin*')));
     }
 
     public function toggleForm(): void
@@ -140,4 +142,3 @@ class CropManager extends Component
         ]);
     }
 }
-

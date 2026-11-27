@@ -6,8 +6,10 @@ use App\Models\Land;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
 class LandManager extends Component
 {
     public string $name = '';
@@ -23,6 +25,11 @@ class LandManager extends Component
     public bool $isAdmin = false;
 
     public bool $showCreateForm = false;
+
+    public function mount(bool $isAdmin = false): void
+    {
+        $this->isAdmin = $isAdmin || (request()->routeIs('admin.*') || (Auth::check() && Auth::user()->isAdmin() && request()->is('admin*')));
+    }
 
     /**
      * @return array<string, array<int, string>>

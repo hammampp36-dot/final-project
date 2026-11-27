@@ -8,8 +8,10 @@ use App\Models\Schedule;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
 class ScheduleManager extends Component
 {
     public ?int $crop_id = null;
@@ -30,7 +32,7 @@ class ScheduleManager extends Component
 
     public function mount(bool $isAdmin = false): void
     {
-        $this->isAdmin = $isAdmin;
+        $this->isAdmin = $isAdmin || (request()->routeIs('admin.*') || (Auth::check() && Auth::user()->isAdmin() && request()->is('admin*')));
         $this->planting_date = now()->format('Y-m-d');
         $this->custom_date = now()->format('Y-m-d');
 

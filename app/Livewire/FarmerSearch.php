@@ -3,39 +3,26 @@
 namespace App\Livewire;
 
 use App\Models\User;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+#[Layout('layouts.app')]
 class FarmerSearch extends Component
 {
     use WithPagination;
 
-    /**
-     * Real-time search query string.
-     */
     public string $search = '';
 
-    /**
-     * Sort column.
-     */
     public string $sortBy = 'created_at';
 
-    /**
-     * Sort direction.
-     */
     public string $sortDirection = 'desc';
 
-    /**
-     * Reset pagination when searching.
-     */
     public function updatedSearch(): void
     {
         $this->resetPage();
     }
 
-    /**
-     * Render the Livewire component.
-     */
     public function render()
     {
         $query = User::where('role', 'user')

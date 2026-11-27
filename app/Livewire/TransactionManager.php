@@ -5,8 +5,10 @@ namespace App\Livewire;
 use App\Models\Transaction;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
 class TransactionManager extends Component
 {
     public string $type = 'expense';
@@ -47,7 +49,7 @@ class TransactionManager extends Component
 
     public function mount(bool $isAdmin = false): void
     {
-        $this->isAdmin = $isAdmin;
+        $this->isAdmin = $isAdmin || (request()->routeIs('admin.*') || (Auth::check() && Auth::user()->isAdmin() && request()->is('admin*')));
         $this->transaction_date = now()->format('Y-m-d');
         $this->category = $this->commonCategories['expense'][0];
     }
